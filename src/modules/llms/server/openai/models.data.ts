@@ -147,7 +147,6 @@ const _knownOpenAIChatModels: ManualMappings = [
 
   // GPT4's
   {
-    isLatest: true,
     idPrefix: 'gpt-4-0613',
     label: 'GPT-4 (0613)',
     description: 'Snapshot of gpt-4 from June 13th 2023 with improved function calling support. Data up to Sep 2021.',
@@ -198,7 +197,6 @@ const _knownOpenAIChatModels: ManualMappings = [
 
   // 3.5-Turbo-16k's
   {
-    isLatest: true,
     idPrefix: 'gpt-3.5-turbo-0125',
     label: '3.5-Turbo (0125)',
     description: 'The latest GPT-3.5 Turbo model with higher accuracy at responding in requested formats and a fix for a bug which caused a text encoding issue for non-English language function calls. Returns a maximum of 4,096 output tokens.',
@@ -361,7 +359,6 @@ const _knownMistralChatModels: ManualMappings = [
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
     pricing: { chatIn: 8, chatOut: 24 },
     benchmark: { cbaElo: 1159 },
-    isLatest: true,
   },
   {
     idPrefix: 'mistral-large-latest',
@@ -425,7 +422,6 @@ const _knownMistralChatModels: ManualMappings = [
     contextWindow: 32768,
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
     pricing: { chatIn: 2, chatOut: 6 },
-    isLatest: true,
   },
   {
     idPrefix: 'mistral-small-2312',
@@ -604,8 +600,10 @@ export function openRouterModelToModelDescription(wireModel: object): ModelDescr
 
   // parse pricing
   const pricing: ModelDescriptionSchema['pricing'] = {
-    chatIn: parseFloat(model.pricing.prompt) * 1000,
-    chatOut: parseFloat(model.pricing.completion),
+    chatIn: parseFloat(model.pricing.prompt) * 1000 * 1000,
+    chatOut: parseFloat(model.pricing.completion) * 1000 * 1000,
+    // image...
+    // request...
   };
   const seemsFree = pricing.chatIn === 0 && pricing.chatOut === 0;
 
@@ -707,123 +705,62 @@ export function togetherAIModelsToModelDescriptions(wireModels: unknown): ModelD
 // Perplexity
 
 const _knownPerplexityChatModels: ModelDescriptionSchema[] = [
-  // {
-  //   id: 'codellama-34b-instruct',
-  //   label: 'Codellama 34B Instruct (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try Codellama 70B Instruct as a replacement.',
-  //   contextWindow: 16384,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
+  // perplexity models
   {
-    id: 'codellama-70b-instruct',
-    label: 'Codellama 70B Instruct',
-    description: 'Code Llama is a collection of pretrained and fine-tuned generative text models. This model is designed for general code synthesis and understanding.',
-    contextWindow: 16384,
+    id: 'llama-3-sonar-small-32k-chat',
+    label: 'Sonar Small Chat',
+    description: 'Llama 3 Sonar Small 32k Chat',
+    contextWindow: 32768,
     interfaces: [LLM_IF_OAI_Chat],
   },
-  // {
-  //   id: 'llama-2-70b-chat',
-  //   label: 'Llama 2 70B Chat (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try mixtral-8x7b-instruct as a replacement.',
-  //   contextWindow: 4096,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
   {
-    id: 'mistral-7b-instruct',
-    label: 'Mistral 7B Instruct',
-    description: 'The Mistral-7B-Instruct-v0.1 Large Language Model (LLM) is a instruct fine-tuned version of the Mistral-7B-v0.1 generative text model using a variety of publicly available conversation datasets.',
-    contextWindow: 16384,
+    id: 'llama-3-sonar-small-32k-online',
+    label: 'Sonar Small Online 🌐',
+    description: 'Llama 3 Sonar Small 32k Online',
+    contextWindow: 28000,
+    interfaces: [LLM_IF_OAI_Chat],
+  },
+  {
+    id: 'llama-3-sonar-large-32k-chat',
+    label: 'Sonar Large Chat',
+    description: 'Llama 3 Sonar Large 32k Chat',
+    contextWindow: 32768,
+    interfaces: [LLM_IF_OAI_Chat],
+  },
+  {
+    id: 'llama-3-sonar-large-32k-online',
+    label: 'Sonar Large Online 🌐',
+    description: 'Llama 3 Sonar Large 32k Online',
+    contextWindow: 28000,
+    interfaces: [LLM_IF_OAI_Chat],
+  },
+
+  // opensource models
+  {
+    id: 'llama-3-8b-instruct',
+    label: 'Llama 3 8B Instruct',
+    description: 'Llama 3 8B Instruct',
+    contextWindow: 8192,
+    interfaces: [LLM_IF_OAI_Chat],
+  },
+  {
+    id: 'llama-3-70b-instruct',
+    label: 'Llama 3 70B Instruct',
+    description: 'Llama 3 70B Instruct',
+    contextWindow: 8192,
     interfaces: [LLM_IF_OAI_Chat],
   },
   {
     id: 'mixtral-8x7b-instruct',
     label: 'Mixtral 8x7B Instruct',
-    description: 'The Mixtral-8x7B Large Language Model (LLM) is a pretrained generative Sparse Mixture of Experts.',
+    description: 'Mixtral 8x7B Instruct',
     contextWindow: 16384,
-    interfaces: [LLM_IF_OAI_Chat],
-  },
-  // {
-  //   id: 'pplx-7b-online',
-  //   label: 'Perplexity 7B Online (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try Sonar Small Online as a replacement.',
-  //   contextWindow: 4096,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
-  // {
-  //   id: 'pplx-70b-online',
-  //   label: 'Perplexity 70B Online (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try Sonar Medium Online as a replacement.',
-  //   contextWindow: 4096,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
-  // {
-  //   id: 'pplx-8x7b-online',
-  //   label: 'Perplexity 8x7B Online (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try Sonar Medium Online as a replacement.',
-  //   contextWindow: 4096,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
-  // {
-  //   id: 'pplx-7b-chat',
-  //   label: 'Perplexity 7B Chat (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try Sonar Small Chat as a replacement.',
-  //   contextWindow: 8192,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
-  // {
-  //   id: 'pplx-70b-chat',
-  //   label: 'Perplexity 70B Chat (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try Sonar Medium Chat as a replacement.',
-  //   contextWindow: 4096,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
-  // {
-  //   id: 'pplx-8x7b-chat',
-  //   label: 'Perplexity 8x7B Chat (deprecated)',
-  //   description: 'Will be removed on March 15th, 2024. Try Sonar Medium Chat as a replacement.',
-  //   contextWindow: 4096,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  //   hidden: true,
-  // },
-  {
-    id: 'sonar-small-chat',
-    label: 'Sonar Small Chat',
-    description: 'Sonar Small Chat',
-    contextWindow: 16384,
-    interfaces: [LLM_IF_OAI_Chat],
-  },
-  {
-    id: 'sonar-medium-chat',
-    label: 'Sonar Medium Chat',
-    description: 'Sonar Medium Chat',
-    contextWindow: 16384,
-    interfaces: [LLM_IF_OAI_Chat],
-  },
-  {
-    id: 'sonar-small-online',
-    label: 'Sonar Small Online 🌐',
-    description: 'Sonar Small Online',
-    contextWindow: 12000,
-    interfaces: [LLM_IF_OAI_Chat],
-  },
-  {
-    id: 'sonar-medium-online',
-    label: 'Sonar Medium Online 🌐',
-    description: 'Sonar Medium Online',
-    contextWindow: 12000,
     interfaces: [LLM_IF_OAI_Chat],
   },
 ];
 
 const perplexityAIModelFamilyOrder = [
-  'sonar-medium', 'sonar-small', 'mixtral', 'mistral', 'codellama', 'llama-2', '',
+  'llama-3-sonar-large', 'llama-3-sonar-small', 'llama-3', 'mixtral', '',
 ];
 
 export function perplexityAIModelDescriptions() {
@@ -842,21 +779,46 @@ export function perplexityAIModelSort(a: ModelDescriptionSchema, b: ModelDescrip
   return b.label.localeCompare(a.label);
 }
 
-// Groq
+
+// Groq - https://console.groq.com/docs/models
 
 const _knownGroqModels: ManualMappings = [
-  // {
-  //   id: 'lama2-70b-4096',
-  //   label: 'Llama 2 70B Chat',
-  //   description: 'Llama 2 is a collection of pretrained and fine-tuned generative text models.',
-  //   contextWindow: 4096,
-  //   interfaces: [LLM_IF_OAI_Chat],
-  // },
+  {
+    isLatest: true,
+    idPrefix: 'llama3-70b-8192',
+    label: 'Llama 3 · 70B',
+    description: 'LLaMA3 70b developed by Meta with a context window of 8,192 tokens.',
+    contextWindow: 8192,
+    interfaces: [LLM_IF_OAI_Chat],
+  },
+  {
+    // isLatest: true,
+    idPrefix: 'llama3-8b-8192',
+    label: 'Llama 3 · 8B',
+    description: 'LLaMA3 8b developed by Meta with a context window of 8,192 tokens.',
+    contextWindow: 8192,
+    interfaces: [LLM_IF_OAI_Chat],
+  },
+  {
+    idPrefix: 'llama2-70b-4096',
+    label: 'Llama 2 · 70B',
+    description: 'LLaMA2 70b developed by Meta with a context window of 4,096 tokens.',
+    contextWindow: 4096,
+    interfaces: [LLM_IF_OAI_Chat],
+    hidden: true,
+  },
   {
     idPrefix: 'mixtral-8x7b-32768',
-    label: 'Mixtral 8x7B Instruct v0.1',
-    description: 'The Mixtral-8x7B Large Language Model (LLM) is a pretrained generative Sparse Mixture of Experts.',
+    label: 'Mixtral 8x7B',
+    description: 'Mixtral 8x7b developed by Mistral with a context window of 32,768 tokens.',
     contextWindow: 32768,
+    interfaces: [LLM_IF_OAI_Chat],
+  },
+  {
+    idPrefix: 'gemma-7b-it',
+    label: 'Gemma 1.1 · 7B Instruct',
+    description: 'Gemma 7b developed by Google with a context window of 8,192 tokens.',
+    contextWindow: 8192,
     interfaces: [LLM_IF_OAI_Chat],
   },
 ];
@@ -871,6 +833,15 @@ export function groqModelToModelDescription(_model: unknown): ModelDescriptionSc
     interfaces: [LLM_IF_OAI_Chat],
     hidden: true,
   });
+}
+
+export function groqModelSortFn(a: ModelDescriptionSchema, b: ModelDescriptionSchema): number {
+  // sort as per their order in the known models
+  const aIndex = _knownGroqModels.findIndex(base => a.id.startsWith(base.idPrefix));
+  const bIndex = _knownGroqModels.findIndex(base => b.id.startsWith(base.idPrefix));
+  if (aIndex !== -1 && bIndex !== -1)
+    return aIndex - bIndex;
+  return a.id.localeCompare(b.id);
 }
 
 
