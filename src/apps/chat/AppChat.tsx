@@ -23,7 +23,7 @@ import { PreferencesTab, useOptimaLayout, usePluggableOptimaLayout } from '~/com
 import { ScrollToBottom } from '~/common/scroll-to-bottom/ScrollToBottom';
 import { ScrollToBottomButton } from '~/common/scroll-to-bottom/ScrollToBottomButton';
 import { addSnackbar, removeSnackbar } from '~/common/components/useSnackbarsStore';
-import { createDMessage, DConversationId, DMessage, getConversation, getConversationSystemPurposeId, useConversation } from '~/common/state/store-chats';
+import { createDMessage, DConversationId, DMessage, DMessageMetadata, getConversation, getConversationSystemPurposeId, useConversation } from '~/common/state/store-chats';
 import { themeBgAppChatComposer } from '~/common/app.theme';
 import { useFolderStore } from '~/common/state/store-folders';
 import { useIsMobile } from '~/common/components/useMatchMedia';
@@ -210,7 +210,7 @@ export function AppChat() {
     return outcome === true;
   }, [openModelsSetup, openPreferencesTab]);
 
-  const handleComposerAction = React.useCallback((conversationId: DConversationId, chatModeId: ChatModeId, multiPartMessage: ComposerOutputMultiPart): boolean => {
+  const handleComposerAction = React.useCallback((conversationId: DConversationId, chatModeId: ChatModeId, multiPartMessage: ComposerOutputMultiPart, metadata?: DMessageMetadata): boolean => {
     // validate inputs
     if (multiPartMessage.length !== 1 || multiPartMessage[0].type !== 'text-block') {
       addSnackbar({
@@ -231,16 +231,19 @@ export function AppChat() {
       chatPanes.forEach(pane => pane.conversationId && uniqueConversationIds.add(pane.conversationId));
 
     // we loop to handle both the normal and multicast modes
-    let enqueued = false;
+    let enqueuedAny = false;
     for (const _cId of uniqueConversationIds) {
-      const _conversation = getConversation(_cId);
-      if (_conversation) {
-        // start execution fire/forget
-        void handleExecuteAndOutcome(chatModeId, _cId, [..._conversation.messages, createDMessage('user', userText)]);
-        enqueued = true;
-      }
+      const history = getConversation(_cId)?.messages;
+      if (!history) continue;
+
+      const newUserMessage = createDMessage('user', userText);
+      if (metadata) newUserMessage.metadata = metadata;
+
+      // fire/forget
+      void handleExecuteAndOutcome(chatModeId, _cId, [...history, newUserMessage]);
+      enqueuedAny = true;
     }
-    return enqueued;
+    return enqueuedAny;
   }, [chatPanes, handleExecuteAndOutcome, willMulticast]);
 
   const handleConversationExecuteHistory = React.useCallback(async (conversationId: DConversationId, history: DMessage[]) => {

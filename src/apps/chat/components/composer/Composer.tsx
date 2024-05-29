@@ -27,7 +27,7 @@ import { ConversationsManager } from '~/common/chats/ConversationsManager';
 import { PreferencesTab, useOptimaLayout } from '~/common/layout/optima/useOptimaLayout';
 import { SpeechResult, useSpeechRecognition } from '~/common/components/useSpeechRecognition';
 import { animationEnterBelow } from '~/common/util/animUtils';
-import { conversationTitle, DConversationId, getConversation, useChatStore } from '~/common/state/store-chats';
+import { conversationTitle, DConversationId, DMessageMetadata, getConversation, useChatStore } from '~/common/state/store-chats';
 import { countModelTokens } from '~/common/util/token-counter';
 import { isMacUser } from '~/common/util/pwaUtils';
 import { launchAppCall } from '~/common/app.routes';
@@ -54,7 +54,6 @@ import { getSingleTextBlockText, useLLMAttachments } from './attachments/useLLMA
 import { useAttachments } from './attachments/useAttachments';
 
 import type { ComposerOutputMultiPart } from './composer.types';
-import { BubbleReplyTo } from './BubbleReplyTo';
 import { ButtonAttachCameraMemo, useCameraCaptureModal } from './buttons/ButtonAttachCamera';
 import { ButtonAttachClipboardMemo } from './buttons/ButtonAttachClipboard';
 import { ButtonAttachFileMemo } from './buttons/ButtonAttachFile';
@@ -66,6 +65,7 @@ import { ButtonMicMemo } from './buttons/ButtonMic';
 import { ButtonMultiChatMemo } from './buttons/ButtonMultiChat';
 import { ButtonOptionsDraw } from './buttons/ButtonOptionsDraw';
 import { ChatModeMenu } from './ChatModeMenu';
+import { ReplyToBubble } from '../message/ReplyToBubble';
 import { TokenBadgeMemo } from './TokenBadge';
 import { TokenProgressbarMemo } from './TokenProgressbar';
 import { useComposerStartupText } from './store-composer';
@@ -101,7 +101,7 @@ export function Composer(props: {
   capabilityHasT2I: boolean;
   isMulticast: boolean | null;
   isDeveloperMode: boolean;
-  onAction: (conversationId: DConversationId, chatModeId: ChatModeId, multiPartMessage: ComposerOutputMultiPart) => boolean;
+  onAction: (conversationId: DConversationId, chatModeId: ChatModeId, multiPartMessage: ComposerOutputMultiPart, metadata?: DMessageMetadata) => boolean;
   onTextImagine: (conversationId: DConversationId, text: string) => void;
   setIsMulticast: (on: boolean) => void;
   sx?: SxProps;
@@ -117,9 +117,10 @@ export function Composer(props: {
 
   // external state
   const { openPreferencesTab /*, setIsFocusedMode*/ } = useOptimaLayout();
-  const { labsAttachScreenCapture, labsCameraDesktop } = useUXLabsStore(useShallow(state => ({
+  const { labsAttachScreenCapture, labsCameraDesktop, labsShowCost } = useUXLabsStore(useShallow(state => ({
     labsAttachScreenCapture: state.labsAttachScreenCapture,
     labsCameraDesktop: state.labsCameraDesktop,
+    labsShowCost: state.labsShowCost,
   })));
   const timeToShowTips = useAppStateStore(state => state.usageCount > 2);
   const { novel: explainShiftEnter, touch: touchShiftEnter } = useUICounter('composer-shift-enter');
@@ -145,7 +146,7 @@ export function Composer(props: {
   const conversationHandler = props.conversationId ? ConversationsManager.getHandler(props.conversationId) : null;
   const conversationOverlayStore = conversationHandler?.getOverlayStore() ?? null;
   const { replyToGenerateText } = useChatOverlayStore(conversationOverlayStore, useShallow(store => ({
-    replyToGenerateText: chatModeId === 'generate-text' ? store.replyToText : null,
+    replyToGenerateText: chatModeId === 'generate-text' ? store.replyToText?.trim() || null : null,
   })));
 
 
@@ -185,6 +186,18 @@ export function Composer(props: {
   }, [setComposeText, setStartupText, startupText]);
 
 
+  // Overlay actions
+
+  const handleReplyToCleared = React.useCallback(() => {
+    conversationOverlayStore?.getState().setReplyToText(null);
+  }, [conversationOverlayStore]);
+
+  React.useEffect(() => {
+    if (replyToGenerateText)
+      setTimeout(() => props.composerTextAreaRef.current?.focus(), 1 /* prevent focus theft */);
+  }, [replyToGenerateText, props.composerTextAreaRef]);
+
+
   // Primary button
 
   const { conversationId, onAction } = props;
@@ -198,15 +211,19 @@ export function Composer(props: {
     if (!multiPartMessage.length)
       return false;
 
+    // metadata
+    const metadata = replyToGenerateText ? { inReplyToText: replyToGenerateText } : undefined;
+
     // send the message
-    const enqueued = onAction(conversationId, _chatModeId, multiPartMessage);
+    const enqueued = onAction(conversationId, _chatModeId, multiPartMessage, metadata);
     if (enqueued) {
       clearAttachments();
+      handleReplyToCleared();
       setComposeText('');
     }
 
     return enqueued;
-  }, [clearAttachments, conversationId, llmAttachments, onAction, setComposeText]);
+  }, [clearAttachments, conversationId, handleReplyToCleared, llmAttachments, onAction, replyToGenerateText, setComposeText]);
 
   const handleSendClicked = React.useCallback(() => {
     handleSendAction(chatModeId, composeText);
@@ -237,18 +254,6 @@ export function Composer(props: {
     props.onTextImagine(props.conversationId, composeText);
     setComposeText('');
   }, [composeText, props, setComposeText]);
-
-
-  // Overlay actions
-
-  const handleReplyToCleared = React.useCallback(() => {
-    conversationOverlayStore?.getState().setReplyToText(null);
-  }, [conversationOverlayStore]);
-
-  React.useEffect(() => {
-    if (replyToGenerateText)
-      setTimeout(() => props.composerTextAreaRef.current?.focus(), 1 /* prevent focus theft */);
-  }, [replyToGenerateText, props.composerTextAreaRef]);
 
 
   // Mode menu
@@ -654,7 +659,7 @@ export function Composer(props: {
                   onPasteCapture={handleAttachCtrlV}
                   // onFocusCapture={handleFocusModeOn}
                   // onBlurCapture={handleFocusModeOff}
-                  endDecorator={showChatReplyTo && <BubbleReplyTo replyToText={replyToGenerateText} onClear={handleReplyToCleared} className='reply-to-bubble' />}
+                  endDecorator={showChatReplyTo && <ReplyToBubble replyToText={replyToGenerateText} onClear={handleReplyToCleared} className='reply-to-bubble' />}
                   slotProps={{
                     textarea: {
                       enterKeyHint: enterIsNewline ? 'enter' : 'send',
@@ -675,8 +680,8 @@ export function Composer(props: {
                   <TokenProgressbarMemo direct={tokensComposer} history={tokensHistory} responseMax={tokensReponseMax} limit={tokenLimit} tokenPriceIn={tokenPriceIn} tokenPriceOut={tokenPriceOut} />
                 )}
 
-                {!showChatReplyTo && !!tokenLimit && (
-                  <TokenBadgeMemo direct={tokensComposer} history={tokensHistory} responseMax={tokensReponseMax} limit={tokenLimit} tokenPriceIn={tokenPriceIn} tokenPriceOut={tokenPriceOut} showExcess absoluteBottomRight />
+                {!showChatReplyTo && tokenLimit > 0 && (
+                  <TokenBadgeMemo direct={tokensComposer} history={tokensHistory} responseMax={tokensReponseMax} limit={tokenLimit} tokenPriceIn={tokenPriceIn} tokenPriceOut={tokenPriceOut} showCost={labsShowCost} showExcess absoluteBottomRight />
                 )}
 
               </Box>
