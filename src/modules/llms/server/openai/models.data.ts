@@ -9,9 +9,37 @@ import { wireTogetherAIListOutputSchema } from './togetherai.wiretypes';
 
 
 // [Azure] / [OpenAI]
+// https://platform.openai.com/docs/models
 const _knownOpenAIChatModels: ManualMappings = [
 
-  // GPT-4o -> 2024-05-13
+  // GPT-4o mini
+  {
+    idPrefix: 'gpt-4o-mini-2024-07-18',
+    label: 'GPT-4o Mini (2024-07-18)',
+    description: 'Affordable model for fast, lightweight tasks. GPT-4o mini is cheaper and more capable than GPT-3.5 Turbo.',
+    contextWindow: 128000,
+    maxCompletionTokens: 16384,
+    trainingDataCutoff: 'Oct 2023',
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
+    pricing: { chatIn: 0.15, chatOut: 0.60 },
+    benchmark: { cbaElo: 1277, cbaMmlu: 82.0 },
+  },
+  {
+    idPrefix: 'gpt-4o-mini',
+    label: 'GPT-4o mini',
+    description: 'Currently points to gpt-4o-mini-2024-07-18.',
+    symLink: 'gpt-4o-mini-2024-07-18',
+    hidden: true,
+    // copied from symlinked
+    contextWindow: 128000,
+    maxCompletionTokens: 16384,
+    trainingDataCutoff: 'Oct 2023',
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
+    pricing: { chatIn: 0.15, chatOut: 0.60 },
+    benchmark: { cbaElo: 1277, cbaMmlu: 82.0 },
+  },
+
+  // GPT-4o -> 2024-05-13 (will be update to 2024-08-06 in the future (3 weeks notice))
   {
     idPrefix: 'gpt-4o',
     label: 'GPT-4o',
@@ -24,10 +52,21 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Oct 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
     pricing: { chatIn: 5, chatOut: 15 },
-    benchmark: { cbaElo: 1310 },
+    benchmark: { cbaElo: 1286 },
   },
   {
     isLatest: true,
+    idPrefix: 'gpt-4o-2024-08-06',
+    label: 'GPT-4o (2024-08-06)',
+    description: 'Latest snapshot that supports Structured Outputs',
+    contextWindow: 128000,
+    maxCompletionTokens: 16384,
+    trainingDataCutoff: 'Oct 2023',
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
+    pricing: { chatIn: 2.5, chatOut: 10 },
+    benchmark: { cbaElo: 1286 + 1 },
+  },
+  {
     idPrefix: 'gpt-4o-2024-05-13',
     label: 'GPT-4o (2024-05-13)',
     description: 'Advanced, multimodal flagship model that’s cheaper and faster than GPT-4 Turbo.',
@@ -36,7 +75,8 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Oct 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
     pricing: { chatIn: 5, chatOut: 15 },
-    benchmark: { cbaElo: 1310 },
+    benchmark: { cbaElo: 1286 },
+    hidden: true,
   },
 
   // GPT4 Turbo with Vision -> 2024-04-09
@@ -52,7 +92,7 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Dec 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
     pricing: { chatIn: 10, chatOut: 30 },
-    benchmark: { cbaElo: 1261 },
+    benchmark: { cbaElo: 1257 },
   },
   {
     idPrefix: 'gpt-4-turbo-2024-04-09',
@@ -63,7 +103,7 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Dec 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
     pricing: { chatIn: 10, chatOut: 30 },
-    benchmark: { cbaElo: 1261 },
+    benchmark: { cbaElo: 1257 },
   },
 
   // GPT4 Turbo Previews
@@ -80,32 +120,30 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Dec 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
     pricing: { chatIn: 10, chatOut: 30 },
-    benchmark: { cbaElo: 1251 },
+    benchmark: { cbaElo: 1245 },
   },
   {
     idPrefix: 'gpt-4-0125-preview', // GPT-4 Turbo preview model
     label: 'GPT-4 Turbo (0125)',
-    description: 'GPT-4 Turbo preview model intended to reduce cases of "laziness" where the model doesn\'t complete a task. Returns a maximum of 4,096 output tokens.',
-    isPreview: true,
+    description: 'GPT-4 Turbo preview model intended to reduce cases of "laziness" where the model doesn\'t complete a task.',
     contextWindow: 128000,
     maxCompletionTokens: 4096,
     trainingDataCutoff: 'Dec 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
     pricing: { chatIn: 10, chatOut: 30 },
-    benchmark: { cbaElo: 1251 },
+    benchmark: { cbaElo: 1245 },
     hidden: true,
   },
   {
     idPrefix: 'gpt-4-1106-preview', // GPT-4 Turbo preview model
     label: 'GPT-4 Turbo (1106)',
-    description: 'GPT-4 Turbo preview model featuring improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more. Returns a maximum of 4,096 output tokens.',
-    isPreview: true,
+    description: 'GPT-4 Turbo preview model featuring improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more.',
     contextWindow: 128000,
     maxCompletionTokens: 4096,
     trainingDataCutoff: 'Apr 2023',
-    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn, LLM_IF_OAI_Json],
     pricing: { chatIn: 10, chatOut: 30 },
-    benchmark: { cbaElo: 1255 },
+    benchmark: { cbaElo: 1251 },
     hidden: true,
   },
 
@@ -182,7 +220,7 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Sep 2021',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
     pricing: { chatIn: 30, chatOut: 60 },
-    benchmark: { cbaElo: 1164 },
+    benchmark: { cbaElo: 1161 },
   },
   {
     idPrefix: 'gpt-4-0314',
@@ -192,7 +230,7 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Sep 2021',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
     pricing: { chatIn: 30, chatOut: 60 },
-    benchmark: { cbaElo: 1189 },
+    benchmark: { cbaElo: 1186 },
     hidden: true,
   },
   {
@@ -206,7 +244,8 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Sep 2021',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
     pricing: { chatIn: 30, chatOut: 60 },
-    benchmark: { cbaElo: 1164 },
+    benchmark: { cbaElo: 1161 },
+    isLegacy: true,
   },
 
 
@@ -222,23 +261,22 @@ const _knownOpenAIChatModels: ManualMappings = [
     hidden: true,
   },
 
-
-  // 3.5-Turbo-16k's
+  // 3.5-Turbo's (16ks)
   {
     idPrefix: 'gpt-3.5-turbo-0125',
     label: '3.5-Turbo (0125)',
-    description: 'The latest GPT-3.5 Turbo model with higher accuracy at responding in requested formats and a fix for a bug which caused a text encoding issue for non-English language function calls. Returns a maximum of 4,096 output tokens.',
+    description: 'The latest GPT-3.5 Turbo model with higher accuracy at responding in requested formats and a fix for a bug which caused a text encoding issue for non-English language function calls.',
     contextWindow: 16385,
     maxCompletionTokens: 4096,
     trainingDataCutoff: 'Sep 2021',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
     pricing: { chatIn: 0.5, chatOut: 1.5 },
-    benchmark: { cbaElo: 1104 },
+    benchmark: { cbaElo: 1105 },
   },
   {
     idPrefix: 'gpt-3.5-turbo-1106',
     label: '3.5-Turbo (1106)',
-    description: 'The latest GPT-3.5 Turbo model with improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more.',
+    description: 'GPT-3.5 Turbo model with improved instruction following, JSON mode, reproducible outputs, parallel function calling, and more.',
     contextWindow: 16385,
     maxCompletionTokens: 4096,
     trainingDataCutoff: 'Sep 2021',
@@ -250,7 +288,7 @@ const _knownOpenAIChatModels: ManualMappings = [
   {
     idPrefix: 'gpt-3.5-turbo',
     label: '3.5-Turbo',
-    description: 'Currently points to gpt-3.5-turbo-0125.',
+    description: 'Currently points to gpt-3.5-turbo-0125. As of July 2024, gpt-4o-mini should be used in place of gpt-3.5-turbo, as it is cheaper, more capable, multimodal, and just as fast.',
     symLink: 'gpt-3.5-turbo-0125',
     hidden: true,
     // copied
@@ -259,7 +297,7 @@ const _knownOpenAIChatModels: ManualMappings = [
     trainingDataCutoff: 'Sep 2021',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
     pricing: { chatIn: 0.5, chatOut: 1.5 },
-    benchmark: { cbaElo: 1104 },
+    benchmark: { cbaElo: 1105 },
   },
 
 
@@ -318,6 +356,49 @@ export function azureModelToModelDescription(azureDeploymentRef: string, openAIM
   // if the deployment name mataches an OpenAI model prefix, use that
   const known = _knownOpenAIChatModels.find(base => azureDeploymentRef == base.idPrefix);
   return fromManualMapping(_knownOpenAIChatModels, known ? azureDeploymentRef : openAIModelIdBase, modelCreated, modelUpdated);
+}
+
+
+// [Deepseek AI]
+const _knownDeepseekChatModels: ManualMappings = [
+  // [Models and Pricing](https://platform.deepseek.com/api-docs/pricing)
+  // [List Models](https://platform.deepseek.com/api-docs/api/list-models)
+  {
+    idPrefix: 'deepseek-chat',
+    label: 'Deepseek Chat V2',
+    description: 'Good at general tasks, 128K context length',
+    contextWindow: 128000,
+    interfaces: [LLM_IF_OAI_Chat],
+    maxCompletionTokens: 4096,
+    pricing: {
+      chatIn: 0.14,
+      chatOut: 0.28,
+    },
+  },
+  {
+    idPrefix: 'deepseek-coder',
+    label: 'Deepseek Coder V2',
+    description: 'Good at coding and math tasks, 128K context length',
+    contextWindow: 128000,
+    interfaces: [LLM_IF_OAI_Chat],
+    maxCompletionTokens: 4096,
+    pricing: {
+      chatIn: 0.14,
+      chatOut: 0.28,
+    },
+  },
+];
+
+export function deepseekModelToModelDescription(deepseekModelId: string): ModelDescriptionSchema {
+  return fromManualMapping(_knownDeepseekChatModels, deepseekModelId, undefined, undefined, {
+    idPrefix: deepseekModelId,
+    label: deepseekModelId.replaceAll(/[_-]/g, ' '),
+    description: 'New Deepseek Model',
+    contextWindow: 128000,
+    maxCompletionTokens: 4096,
+    interfaces: [LLM_IF_OAI_Chat], // assume..
+    hidden: true,
+  });
 }
 
 
@@ -859,41 +940,84 @@ export function perplexityAIModelSort(a: ModelDescriptionSchema, b: ModelDescrip
 const _knownGroqModels: ManualMappings = [
   {
     isLatest: true,
+    idPrefix: 'llama-3.1-405b-reasoning',
+    label: 'Llama 3.1 · 405B',
+    description: 'LLaMA 3.1 405B developed by Meta with a context window of 131,072 tokens. Supports tool use.',
+    contextWindow: 131072,
+    maxCompletionTokens: 8000,
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+  },
+  {
+    isLatest: true,
+    idPrefix: 'llama-3.1-70b-versatile',
+    label: 'Llama 3.1 · 70B',
+    description: 'LLaMA 3.1 70B developed by Meta with a context window of 131,072 tokens. Supports tool use.',
+    contextWindow: 131072,
+    maxCompletionTokens: 8000,
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+  },
+  {
+    isLatest: true,
+    idPrefix: 'llama-3.1-8b-instant',
+    label: 'Llama 3.1 · 8B',
+    description: 'LLaMA 3.1 8B developed by Meta with a context window of 131,072 tokens. Supports tool use.',
+    contextWindow: 131072,
+    maxCompletionTokens: 8000,
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+  },
+  {
+    idPrefix: 'llama3-groq-70b-8192-tool-use-preview',
+    label: 'Llama 3 Groq · 70B Tool Use',
+    description: 'LLaMA 3 70B Tool Use developed by Groq with a context window of 8,192 tokens. Optimized for tool use.',
+    contextWindow: 8192,
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+  },
+  {
+    idPrefix: 'llama3-groq-8b-8192-tool-use-preview',
+    label: 'Llama 3 Groq · 8B Tool Use',
+    description: 'LLaMA 3 8B Tool Use developed by Groq with a context window of 8,192 tokens. Optimized for tool use.',
+    contextWindow: 8192,
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+  },
+  {
     idPrefix: 'llama3-70b-8192',
     label: 'Llama 3 · 70B',
-    description: 'LLaMA3 70b developed by Meta with a context window of 8,192 tokens.',
+    description: 'LLaMA3 70B developed by Meta with a context window of 8,192 tokens. Supports tool use.',
     contextWindow: 8192,
-    interfaces: [LLM_IF_OAI_Chat],
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+    // isLegacy: true,
+    hidden: true,
   },
   {
-    // isLatest: true,
     idPrefix: 'llama3-8b-8192',
     label: 'Llama 3 · 8B',
-    description: 'LLaMA3 8b developed by Meta with a context window of 8,192 tokens.',
+    description: 'LLaMA3 8B developed by Meta with a context window of 8,192 tokens. Supports tool use.',
     contextWindow: 8192,
-    interfaces: [LLM_IF_OAI_Chat],
-  },
-  {
-    idPrefix: 'llama2-70b-4096',
-    label: 'Llama 2 · 70B',
-    description: 'LLaMA2 70b developed by Meta with a context window of 4,096 tokens.',
-    contextWindow: 4096,
-    interfaces: [LLM_IF_OAI_Chat],
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+    // isLegacy: true,
     hidden: true,
   },
   {
     idPrefix: 'mixtral-8x7b-32768',
     label: 'Mixtral 8x7B',
-    description: 'Mixtral 8x7b developed by Mistral with a context window of 32,768 tokens.',
+    description: 'Mixtral 8x7B developed by Mistral with a context window of 32,768 tokens. Supports tool use.',
     contextWindow: 32768,
-    interfaces: [LLM_IF_OAI_Chat],
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
+  },
+  {
+    idPrefix: 'gemma2-9b-it',
+    label: 'Gemma 2 · 9B Instruct',
+    description: 'Gemma 2 9B developed by Google with a context window of 8,192 tokens. Supports tool use.',
+    contextWindow: 8192,
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Fn],
   },
   {
     idPrefix: 'gemma-7b-it',
     label: 'Gemma 1.1 · 7B Instruct',
-    description: 'Gemma 7b developed by Google with a context window of 8,192 tokens.',
+    description: 'Gemma 7B developed by Google with a context window of 8,192 tokens. Supports tool use.',
     contextWindow: 8192,
     interfaces: [LLM_IF_OAI_Chat],
+    hidden: true,
   },
 ];
 
@@ -910,6 +1034,11 @@ export function groqModelToModelDescription(_model: unknown): ModelDescriptionSc
 }
 
 export function groqModelSortFn(a: ModelDescriptionSchema, b: ModelDescriptionSchema): number {
+  // sort hidden at the end
+  if (a.hidden && !b.hidden)
+    return 1;
+  if (!a.hidden && b.hidden)
+    return -1;
   // sort as per their order in the known models
   const aIndex = _knownGroqModels.findIndex(base => a.id.startsWith(base.idPrefix));
   const bIndex = _knownGroqModels.findIndex(base => b.id.startsWith(base.idPrefix));
