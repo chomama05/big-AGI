@@ -9,21 +9,6 @@ export const geminiModelsStreamGenerateContentPath = '/v1beta/{model=models/*}:s
 
 
 // models.list = /v1beta/models
-const Methods_enum = z.enum([
-  'bidiGenerateContent', // appeared on 2024-12, see https://github.com/enricoros/big-AGI/issues/700
-  'createCachedContent', // appeared on 2024-06-10, see https://github.com/enricoros/big-AGI/issues/565
-  'countMessageTokens',
-  'countTextTokens',
-  'countTokens',
-  'createTunedModel',
-  'createTunedTextModel',
-  'embedContent',
-  'embedText',
-  'generateAnswer',
-  'generateContent',
-  'generateMessage',
-  'generateText',
-]);
 
 const geminiModelSchema = z.object({
   name: z.string(),
@@ -32,7 +17,20 @@ const geminiModelSchema = z.object({
   description: z.string(),
   inputTokenLimit: z.number().int().min(1),
   outputTokenLimit: z.number().int().min(1),
-  supportedGenerationMethods: z.array(z.union([Methods_enum, z.string()])), // relaxed with z.union to not break on expansion
+  supportedGenerationMethods: z.array(z.enum([
+    'createCachedContent', // appeared on 2024-06-10, see https://github.com/enricoros/big-AGI/issues/565
+    'countMessageTokens',
+    'countTextTokens',
+    'countTokens',
+    'createTunedModel',
+    'createTunedTextModel',
+    'embedContent',
+    'embedText',
+    'generateAnswer',
+    'generateContent',
+    'generateMessage',
+    'generateText',
+  ])),
   temperature: z.number().optional(),
   topP: z.number().optional(),
   topK: z.number().optional(),
@@ -174,7 +172,7 @@ export const geminiGeneratedContentResponseSchema = z.object({
   // either all requested candidates are returned or no candidates at all
   // no candidates are returned only if there was something wrong with the prompt (see promptFeedback)
   candidates: z.array(z.object({
-    index: z.number().optional(),
+    index: z.number(),
     content: geminiContentSchema.optional(), // this can be missing if the finishReason is not 'MAX_TOKENS'
     finishReason: geminiFinishReasonSchema.optional(),
     safetyRatings: z.array(geminiSafetyRatingSchema).optional(), // undefined when finishReason is 'RECITATION'
