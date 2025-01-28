@@ -1,7 +1,7 @@
 {
   "functions": {
-    "api/trpc-node/**/*": {
-      "maxDuration": 30
+    "app/api/trpc-node/**/*": {
+      "maxDuration": 25
     }
   }
 }
