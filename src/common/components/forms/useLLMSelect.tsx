@@ -1,23 +1,29 @@
 import * as React from 'react';
-import { shallow } from 'zustand/shallow';
 
 import type { SxProps } from '@mui/joy/styles/types';
 import { FormControl, ListDivider, ListItemDecorator, Option, Select, SvgIconProps } from '@mui/joy';
 
-import { DLLM, DLLMId, useModelsStore } from '~/modules/llms/store-llms';
-import { findVendorById } from '~/modules/llms/vendors/vendors.registry';
+import type { IModelVendor } from '~/modules/llms/vendors/IModelVendor';
+import { findModelVendor } from '~/modules/llms/vendors/vendors.registry';
 
-import { FormLabelStart } from '~/common/components/forms/FormLabelStart';
-import { IModelVendor } from '~/modules/llms/vendors/IModelVendor';
+import { DLLM, DLLMId, LLM_IF_OAI_Reasoning } from '~/common/stores/llms/llms.types';
+import { getChatLLMId } from '~/common/stores/llms/store-llms';
+import { useNonHiddenLLMs } from '~/common/stores/llms/llms.hooks';
+
+import { FormLabelStart } from './FormLabelStart';
+
+
+// configuration
+const LLM_SELECT_SHOW_REASONING_ICON = false;
 
 
 /*export function useLLMSelectGlobalState(): [DLLMId | null, (llmId: DLLMId | null) => void] {
-  return useModelsStore(state => [state.chatLLMId, state.setChatLLMId], shallow);
+  return ...(useShallow(state => [state.chatLLMId, state.setChatLLMId]));
 }*/
 
 export function useLLMSelectLocalState(initFromGlobal: boolean): [DLLMId | null, (llmId: DLLMId | null) => void] {
   return React.useState<DLLMId | null>(initFromGlobal ? () => {
-    return useModelsStore.getState().chatLLMId;
+    return getChatLLMId();
   } : null);
 }
 
@@ -25,7 +31,26 @@ const llmSelectSx: SxProps = {
   flex: 1,
   backgroundColor: 'background.popup',
   // minWidth: '200',
-};
+} as const;
+
+const _slotProps = {
+  listbox: {
+    sx: {
+      // larger list
+      '--ListItem-paddingLeft': '1rem',
+      '--ListItem-minHeight': '2.5rem',
+      // minWidth: '100%',
+    } as const,
+  } as const,
+  button: {
+    sx: {
+      // show the full name on the button
+      whiteSpace: 'inherit',
+      wordBreak: 'break-word',
+      minWidth: '6rem',
+    } as const,
+  } as const,
+} as const;
 
 /**
  * Select the Model, synced with either Global (Chat) LLM state, or local
@@ -49,15 +74,14 @@ export function useLLMSelect(
 ): [DLLM | null, React.JSX.Element | null, React.FunctionComponent<SvgIconProps> | undefined] {
 
   // external state
-  const _filteredLLMs = useModelsStore(state => {
-    return state.llms.filter(llm => !llm.hidden || (chatLLMId && llm.id === chatLLMId));
-  }, shallow);
+  const _filteredLLMs = useNonHiddenLLMs();
 
   // derived state
   const noIcons = false; //smaller;
   const chatLLM = chatLLMId
     ? _filteredLLMs.find(llm => llm.id === chatLLMId) ?? null
     : null;
+  const chatLLMIsReasoning = !LLM_SELECT_SHOW_REASONING_ICON ? false : chatLLM?.interfaces?.includes(LLM_IF_OAI_Reasoning) ?? false;
 
 
   // Memo the LLM Options for the Select
@@ -66,7 +90,7 @@ export function useLLMSelect(
     let formerVendor: IModelVendor | null = null;
     return _filteredLLMs.reduce((acc, llm, _index) => {
 
-      const vendor = findVendorById(llm._source?.vId);
+      const vendor = findModelVendor(llm.vId);
       const vendorChanged = vendor !== formerVendor;
       if (vendorChanged)
         formerVendor = vendor;
@@ -83,6 +107,7 @@ export function useLLMSelect(
           value={llm.id}
           // Disabled to avoid regenerating the memo too frequently
           // sx={llm.id === chatLLMId ? { fontWeight: 'md' } : undefined}
+          label={llm.label}
         >
           {(!noIcons && !!vendor?.Icon) && (
             <ListItemDecorator>
@@ -115,33 +140,19 @@ export function useLLMSelect(
         disabled={disabled}
         onChange={onSelectChange}
         placeholder={placeholder}
-        slotProps={{
-          listbox: {
-            sx: {
-              // larger list
-              '--ListItem-paddingLeft': '1rem',
-              '--ListItem-minHeight': '2.5rem',
-              // minWidth: '100%',
-            },
-          },
-          button: {
-            sx: {
-              // show the full name on the button
-              whiteSpace: 'inherit',
-            },
-          },
-        }}
+        slotProps={_slotProps}
+        endDecorator={chatLLMIsReasoning ? '🧠' : undefined}
         sx={llmSelectSx}
       >
         {componentOptions}
       </Select>
       {/*</Box>*/}
     </FormControl>
-  ), [chatLLMId, componentOptions, disabled, isHorizontal, label, onSelectChange, placeholder, smaller]);
+  ), [chatLLMId, chatLLMIsReasoning, componentOptions, disabled, isHorizontal, label, onSelectChange, placeholder, smaller]);
 
   // Memo the vendor icon for the chat LLM
   const chatLLMVendorIconFC = React.useMemo(() => {
-    return findVendorById(chatLLM?._source?.vId)?.Icon;
+    return findModelVendor(chatLLM?.vId)?.Icon;
   }, [chatLLM]);
 
   return [chatLLM, llmSelectComponent, chatLLMVendorIconFC];

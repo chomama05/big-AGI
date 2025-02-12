@@ -3,28 +3,26 @@ import { DeepseekIcon } from '~/common/components/icons/vendors/DeepseekIcon';
 import type { IModelVendor } from '../IModelVendor';
 import type { OpenAIAccessSchema } from '../../server/openai/openai.router';
 
-import { LLMOptionsOpenAI, ModelVendorOpenAI } from '../openai/openai.vendor';
-import { OpenAILLMOptions } from '../openai/OpenAILLMOptions';
+import { ModelVendorOpenAI } from '../openai/openai.vendor';
 
-import { DeepseekAISourceSetup } from './DeepseekAISourceSetup';
+import { DeepseekAIServiceSetup } from './DeepseekAIServiceSetup';
 
 
-export interface SourceSetupDeepseek {
+export interface DDeepseekServiceSettings {
   deepseekKey: string;
 }
 
-export const ModelVendorDeepseek: IModelVendor<SourceSetupDeepseek, OpenAIAccessSchema, LLMOptionsOpenAI> = {
+export const ModelVendorDeepseek: IModelVendor<DDeepseekServiceSettings, OpenAIAccessSchema> = {
   id: 'deepseek',
   name: 'Deepseek',
-  rank: 19,
+  displayRank: 16,
   location: 'cloud',
   instanceLimit: 1,
   hasBackendCapKey: 'hasLlmDeepseek',
 
   // components
   Icon: DeepseekIcon,
-  SourceSetupComponent: DeepseekAISourceSetup,
-  LLMOptionsComponent: OpenAILLMOptions,
+  ServiceSetupComponent: DeepseekAIServiceSetup,
 
   // functions
   initializeSetup: () => ({
@@ -44,6 +42,5 @@ export const ModelVendorDeepseek: IModelVendor<SourceSetupDeepseek, OpenAIAccess
 
   // OpenAI transport ('Deepseek' dialect in 'access')
   rpcUpdateModelsOrThrow: ModelVendorOpenAI.rpcUpdateModelsOrThrow,
-  rpcChatGenerateOrThrow: ModelVendorOpenAI.rpcChatGenerateOrThrow,
-  streamingChatGenerateOrThrow: ModelVendorOpenAI.streamingChatGenerateOrThrow,
+
 };

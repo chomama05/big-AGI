@@ -4,7 +4,7 @@ import { Alert, Box, Button, Card, CircularProgress, IconButton, LinearProgress,
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 
 import { ExpanderAccordion } from '~/common/components/ExpanderAccordion';
-import { GoodModal } from '~/common/components/GoodModal';
+import { GoodModal } from '~/common/components/modals/GoodModal';
 import { InlineError } from '~/common/components/InlineError';
 import { Link } from '~/common/components/Link';
 import { apiQuery } from '~/common/util/trpc.client';
@@ -127,7 +127,6 @@ export function LocalAIAdmin(props: { access: OpenAIAccessSchema, onClose: () =>
   // external state
   const { data, error } = apiQuery.llmOpenAI.dialectLocalAI_galleryModelsAvailable.useQuery({ access: props.access }, {
     staleTime: 1000 * 60,
-    refetchOnWindowFocus: false,
   });
 
   // derived state
@@ -149,8 +148,7 @@ export function LocalAIAdmin(props: { access: OpenAIAccessSchema, onClose: () =>
       <Box sx={{ display: 'grid', gap: 'var(--Card-padding)' }}>
 
         <Typography level='body-sm'>
-          Install models from your LocalAI Model Gallery. We assume your LocalAI server is correcly
-          configured and running.
+          Install models from your LocalAI Model Gallery. <b>You need a properly configured LocalAI gallery.</b>
         </Typography>
 
         {/* Models being Installed */}
@@ -170,7 +168,7 @@ export function LocalAIAdmin(props: { access: OpenAIAccessSchema, onClose: () =>
 
 
         <Typography level='title-md'>
-          Available Models List
+          Available Models in Gallery
         </Typography>
 
         {/* Errors */}

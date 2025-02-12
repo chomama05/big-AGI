@@ -3,7 +3,7 @@ import * as React from 'react';
 import { Box, Button, FormLabel } from '@mui/joy';
 import SyncIcon from '@mui/icons-material/Sync';
 
-import type { ToggleableBoolean } from '~/common/util/useToggleableBoolean';
+import type { ToggleableBoolean } from '~/common/util/hooks/useToggleableBoolean';
 
 
 /**
@@ -23,7 +23,7 @@ export function SetupFormRefetchButton(props: {
       {props.leftButton}
 
       {!!props.advanced && (
-        <FormLabel onClick={props.advanced.toggle} sx={{ textDecoration: 'underline', cursor: 'pointer' }}>
+        <FormLabel onClick={props.advanced.toggle} sx={{ textDecoration: 'underline', cursor: 'pointer', color: 'text.tertiary' }}>
           {props.advanced.on ? 'Hide Advanced' : 'Advanced'}
         </FormLabel>
       )}

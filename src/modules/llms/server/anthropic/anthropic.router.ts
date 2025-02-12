@@ -1,37 +1,44 @@
 import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
 
-import { createTRPCRouter, publicProcedure } from '~/server/api/trpc.server';
+import { createTRPCRouter, publicProcedure } from '~/server/trpc/trpc.server';
 import { env } from '~/server/env.mjs';
-import { fetchJsonOrTRPCError } from '~/server/api/trpc.router.fetchers';
+import { fetchJsonOrTRPCThrow } from '~/server/trpc/trpc.router.fetchers';
 
+import { LLM_IF_ANT_PromptCaching, LLM_IF_OAI_Chat, LLM_IF_OAI_Fn, LLM_IF_OAI_Vision } from '~/common/stores/llms/llms.types';
 import { fixupHost } from '~/common/util/urlUtils';
 
-import { OpenAIHistorySchema, openAIHistorySchema, OpenAIModelSchema, openAIModelSchema } from '../openai/openai.router';
-import { llmsChatGenerateOutputSchema, llmsGenerateContextSchema, llmsListModelsOutputSchema } from '../llm.server.types';
+import { ListModelsResponse_schema, ModelDescriptionSchema } from '../llm.server.types';
 
-import { AnthropicWireMessagesRequest, anthropicWireMessagesRequestSchema, AnthropicWireMessagesResponse, anthropicWireMessagesResponseSchema } from './anthropic.wiretypes';
 import { hardcodedAnthropicModels } from './anthropic.models';
 
 
 // Default hosts
 const DEFAULT_API_VERSION_HEADERS = {
   'anthropic-version': '2023-06-01',
-  // Former Betas:
-  // - messages-2023-12-15: to use the Messages API
-  'anthropic-beta': 'max-tokens-3-5-sonnet-2024-07-15',
+  // Betas:
+  // - messages-2023-12-15: to use the Messages API [now default]
+  // - max-tokens-3-5-sonnet-2024-07-15
+  //
+  // - prompt-caching-2024-07-31: to use the prompt caching feature; adds to any API invocation:
+  //   - message_start.message.usage.cache_creation_input_tokens: number
+  //   - message_start.message.usage.cache_read_input_tokens: number
+  'anthropic-beta': 'computer-use-2024-10-22,prompt-caching-2024-07-31,max-tokens-3-5-sonnet-2024-07-15',
 };
-const DEFAULT_MAX_TOKENS = 2048;
 const DEFAULT_ANTHROPIC_HOST = 'api.anthropic.com';
 const DEFAULT_HELICONE_ANTHROPIC_HOST = 'anthropic.hconeai.com';
 
 
 // Mappers
 
-async function anthropicPOST<TOut extends object, TPostBody extends object>(access: AnthropicAccessSchema, body: TPostBody, apiPath: string /*, signal?: AbortSignal*/): Promise<TOut> {
+async function anthropicGETOrThrow<TOut extends object>(access: AnthropicAccessSchema, apiPath: string /*, signal?: AbortSignal*/): Promise<TOut> {
   const { headers, url } = anthropicAccess(access, apiPath);
-  return await fetchJsonOrTRPCError<TOut, TPostBody>(url, 'POST', headers, body, 'Anthropic');
+  return await fetchJsonOrTRPCThrow<TOut>({ url, headers, name: 'Anthropic' });
 }
+
+// async function anthropicPOST<TOut extends object, TPostBody extends object>(access: AnthropicAccessSchema, body: TPostBody, apiPath: string /*, signal?: AbortSignal*/): Promise<TOut> {
+//   const { headers, url } = anthropicAccess(access, apiPath);
+//   return await fetchJsonOrTRPCThrow<TOut, TPostBody>({ url, method: 'POST', headers, body, name: 'Anthropic' });
+// }
 
 export function anthropicAccess(access: AnthropicAccessSchema, apiPath: string): { headers: HeadersInit, url: string } {
   // API key
@@ -53,6 +60,9 @@ export function anthropicAccess(access: AnthropicAccessSchema, apiPath: string):
     anthropicHost = `https://${DEFAULT_HELICONE_ANTHROPIC_HOST}`;
   }
 
+  // 2024-10-22: we don't support this yet, but the Anthropic SDK has `dangerouslyAllowBrowser: true`
+  // to use the API from Browsers via CORS
+
   return {
     headers: {
       'Accept': 'application/json',
@@ -63,84 +73,6 @@ export function anthropicAccess(access: AnthropicAccessSchema, apiPath: string):
     },
     url: anthropicHost + apiPath,
   };
-}
-
-export function anthropicMessagesPayloadOrThrow(model: OpenAIModelSchema, history: OpenAIHistorySchema, stream: boolean): AnthropicWireMessagesRequest {
-
-  // Take the System prompt, if it's the first message
-  // But if it's the only message, treat it as a user message
-  history = [...history];
-  let systemPrompt: string | undefined = undefined;
-  if (history[0]?.role === 'system' && history.length > 1)
-    systemPrompt = history.shift()?.content;
-
-  // Transform the OpenAIHistorySchema into the target messages format, ensuring that roles alternate between 'user' and 'assistant'
-  const messages = history.reduce(
-    (acc, historyItem, index) => {
-
-      // skip empty messages
-      if (!historyItem.content.trim()) return acc;
-
-      const lastMessage: AnthropicWireMessagesRequest['messages'][number] | undefined = acc[acc.length - 1];
-      const anthropicRole = historyItem.role === 'assistant' ? 'assistant' : 'user';
-
-      if (index === 0 || anthropicRole !== lastMessage?.role) {
-
-        // Hack/Hotfix: if the first role is 'assistant', then prepend a user message otherwise the API call will break;
-        //              but what should we really do here?
-        if (index === 0 && anthropicRole === 'assistant') {
-          if (systemPrompt) {
-            // This stinks, as it will duplicate the system prompt; it's the best we can do for now for a better UX
-            acc.push({ role: 'user', content: [{ type: 'text', text: systemPrompt }] });
-          } else
-            throw new Error('The first message in the chat history must be a user message and not an assistant message.');
-        }
-
-        // Add a new message object if the role is different from the previous message
-        acc.push({
-          role: anthropicRole,
-          content: [
-            { type: 'text', text: historyItem.content },
-          ],
-        });
-      } else {
-        // Merge consecutive messages with the same role
-        (lastMessage.content as AnthropicWireMessagesRequest['messages'][number]['content']).push(
-          { type: 'text', text: historyItem.content },
-        );
-      }
-      return acc;
-    },
-    [] as AnthropicWireMessagesRequest['messages'],
-  );
-
-  // NOTE: if the last message is 'assistant', then the API will perform a continuation - shall we add a user message? TBD
-
-  // NOTE: the following code has been disabled because Anthropic will reject empty text blocks
-  // If the messages array is empty, add a default user message
-  // if (messages.length === 0)
-  //   messages.push({ role: 'user', content: [{ type: 'text', text: '' }] });
-
-  // Construct the request payload
-  const payload: AnthropicWireMessagesRequest = {
-    model: model.id,
-    ...(systemPrompt !== undefined && { system: systemPrompt }),
-    messages: messages,
-    max_tokens: model.maxTokens || DEFAULT_MAX_TOKENS,
-    stream: stream,
-    ...(model.temperature !== undefined && { temperature: model.temperature }),
-    // metadata: not useful to us
-    // stop_sequences: not useful to us
-    // top_p: not useful to us
-    // top_k: not useful to us
-  };
-
-  // Validate the payload against the schema to ensure correctness
-  const validated = anthropicWireMessagesRequestSchema.safeParse(payload);
-  if (!validated.success)
-    throw new Error(`Invalid message sequence for Anthropic models: ${validated.error.errors?.[0]?.message || validated.error}`);
-
-  return validated.data;
 }
 
 
@@ -158,15 +90,6 @@ const listModelsInputSchema = z.object({
   access: anthropicAccessSchema,
 });
 
-const chatGenerateInputSchema = z.object({
-  access: anthropicAccessSchema,
-  model: openAIModelSchema,
-  history: openAIHistorySchema,
-  // functions: openAIFunctionsSchema.optional(),
-  // forceFunctionName: z.string().optional(),
-  context: llmsGenerateContextSchema.optional(),
-});
-
 
 // Router
 
@@ -175,34 +98,83 @@ export const llmAnthropicRouter = createTRPCRouter({
   /* [Anthropic] list models - https://docs.anthropic.com/claude/docs/models-overview */
   listModels: publicProcedure
     .input(listModelsInputSchema)
-    .output(llmsListModelsOutputSchema)
-    .query(() => ({ models: hardcodedAnthropicModels })),
+    .output(ListModelsResponse_schema)
+    .query(async ({ input: { access } }) => {
 
-  /* [Anthropic] Message generation (non-streaming) */
-  chatGenerateMessage: publicProcedure
-    .input(chatGenerateInputSchema)
-    .output(llmsChatGenerateOutputSchema)
-    .mutation(async ({ input: { access, model, history } }) => {
+      // get the models
+      const wireModels = await anthropicGETOrThrow(access, '/v1/models?limit=1000');
+      const { data: availableModels } = AnthropicWire_API_Models_List.Response_schema.parse(wireModels);
 
-      // NOTES: doesn't support functions yet, supports multi-modal inputs (but they're not in our history, yet)
+      // cast the models to the common schema
+      const models = availableModels.map((model): ModelDescriptionSchema => {
 
-      // throw if the message sequence is not okay
-      const payload = anthropicMessagesPayloadOrThrow(model, history, false);
-      const response = await anthropicPOST<AnthropicWireMessagesResponse, AnthropicWireMessagesRequest>(access, payload, '/v1/messages');
-      const completion = anthropicWireMessagesResponseSchema.parse(response);
+        // use an hardcoded model definition if available
+        const hardcodedModel = hardcodedAnthropicModels.find(m => m.id === model.id);
+        if (hardcodedModel)
+          return hardcodedModel;
 
-      // validate output
-      if (!completion || completion.type !== 'message' || completion.role !== 'assistant' || completion.stop_reason === undefined)
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `[Anthropic Issue] Invalid Message` });
-      if (completion.content.length !== 1 || completion.content[0].type !== 'text')
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `[Anthropic Issue] No Single Text Message (${completion.content.length})` });
+        // for day-0 support of new models, create a placeholder model using sensible defaults
+        const novelModel = _createPlaceholderModel(model);
+        console.log('[DEV] anthropic.router: new model found, please configure it:', novelModel.id);
+        return novelModel;
+      });
 
-      // got the completion (non-streaming)
-      return {
-        role: completion.role,
-        content: completion.content[0].text,
-        finish_reason: completion.stop_reason === 'max_tokens' ? 'length' : 'stop',
-      };
+      // developers warning for obsoleted models
+      const apiModelIds = new Set(availableModels.map(m => m.id));
+      const additionalModels = hardcodedAnthropicModels.filter(m => !apiModelIds.has(m.id));
+      if (additionalModels.length > 0)
+        console.log('[DEV] anthropic.router: obsoleted models:', additionalModels.map(m => m.id).join(', '));
+      // additionalModels.forEach(m => {
+      //   m.label += ' (Removed)';
+      //   m.isLegacy = true;
+      // });
+      // models.push(...additionalModels);
+
+      return { models };
     }),
 
 });
+
+
+/**
+ * Create a placeholder ModelDescriptionSchema for models not in the hardcoded list,
+ * using sensible defaults with the newest available interfaces.
+ */
+function _createPlaceholderModel(model: AnthropicWire_API_Models_List.ModelObject): ModelDescriptionSchema {
+  return {
+    id: model.id,
+    label: model.display_name,
+    created: Math.round(new Date(model.created_at).getTime() / 1000),
+    description: 'Newest model, description not available yet.',
+    contextWindow: 200000,
+    maxCompletionTokens: 8192,
+    trainingDataCutoff: 'Latest',
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_ANT_PromptCaching],
+    // chatPrice: ...
+    // benchmark: ...
+  };
+}
+
+/**
+ * Namespace for the Anthropic API Models List response schema.
+ * NOTE: not merged into AIX because of possible circular dependency issues - future work.
+ */
+namespace AnthropicWire_API_Models_List {
+
+  export type ModelObject = z.infer<typeof ModelObject_schema>;
+  const ModelObject_schema = z.object({
+    type: z.literal('model'),
+    id: z.string(),
+    display_name: z.string(),
+    created_at: z.string(),
+  });
+
+  export type Response = z.infer<typeof Response_schema>;
+  export const Response_schema = z.object({
+    data: z.array(ModelObject_schema),
+    has_more: z.boolean(),
+    first_id: z.string().nullable(),
+    last_id: z.string().nullable(),
+  });
+
+}

@@ -3,28 +3,26 @@ import { PerplexityIcon } from '~/common/components/icons/vendors/PerplexityIcon
 import type { IModelVendor } from '../IModelVendor';
 import type { OpenAIAccessSchema } from '../../server/openai/openai.router';
 
-import { LLMOptionsOpenAI, ModelVendorOpenAI } from '../openai/openai.vendor';
-import { OpenAILLMOptions } from '../openai/OpenAILLMOptions';
+import { ModelVendorOpenAI } from '../openai/openai.vendor';
 
-import { PerplexitySourceSetup } from './PerplexitySourceSetup';
+import { PerplexityServiceSetup } from './PerplexityServiceSetup';
 
 
-export interface SourceSetupPerplexity {
+interface DPerpexityServiceSettings {
   perplexityKey: string;
 }
 
-export const ModelVendorPerplexity: IModelVendor<SourceSetupPerplexity, OpenAIAccessSchema, LLMOptionsOpenAI> = {
+export const ModelVendorPerplexity: IModelVendor<DPerpexityServiceSettings, OpenAIAccessSchema> = {
   id: 'perplexity',
   name: 'Perplexity',
-  rank: 18,
+  displayRank: 20,
   location: 'cloud',
   instanceLimit: 1,
   hasBackendCapKey: 'hasLlmPerplexity',
 
   // components
   Icon: PerplexityIcon,
-  SourceSetupComponent: PerplexitySourceSetup,
-  LLMOptionsComponent: OpenAILLMOptions,
+  ServiceSetupComponent: PerplexityServiceSetup,
 
   // functions
   initializeSetup: () => ({
@@ -44,6 +42,5 @@ export const ModelVendorPerplexity: IModelVendor<SourceSetupPerplexity, OpenAIAc
 
   // OpenAI transport ('perplexity' dialect in 'access')
   rpcUpdateModelsOrThrow: ModelVendorOpenAI.rpcUpdateModelsOrThrow,
-  rpcChatGenerateOrThrow: ModelVendorOpenAI.rpcChatGenerateOrThrow,
-  streamingChatGenerateOrThrow: ModelVendorOpenAI.streamingChatGenerateOrThrow,
+
 };

@@ -1,7 +1,7 @@
 # BIG-AGI 🧠✨
 
 Welcome to big-AGI, the AI suite for professionals that need function, form,
-simplicity, and speed. Powered by the latest models from 12 vendors and
+simplicity, and speed. Powered by the latest models from 15 vendors and
 open-source servers, `big-AGI` offers best-in-class Chats,
 [Beams](https://github.com/enricoros/big-AGI/issues/470),
 and [Calls](https://github.com/enricoros/big-AGI/issues/354) with AI personas,
@@ -11,24 +11,53 @@ Stay ahead of the curve with big-AGI. 🚀 Pros & Devs love big-AGI. 🤖
 
 [![Official Website](https://img.shields.io/badge/BIG--AGI.com-%23096bde?style=for-the-badge&logo=vercel&label=launch)](https://big-agi.com)
 
+> 🚀 Big-AGI 2 is launching soon.
+
 Or fork & run on Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fenricoros%2Fbig-AGI&env=OPENAI_API_KEY&envDescription=Backend%20API%20keys%2C%20optional%20and%20may%20be%20overridden%20by%20the%20UI.&envLink=https%3A%2F%2Fgithub.com%2Fenricoros%2Fbig-AGI%2Fblob%2Fmain%2Fdocs%2Fenvironment-variables.md&project-name=big-AGI)
 
-## 👉 [roadmap](https://github.com/users/enricoros/projects/4/views/2) 👉 [installation](docs/installation.md) 👉 [documentation](docs/README.md)
+### New Version
 
-> Note: bigger better features (incl. Beam-2) are being cooked outside of `main`.
+This repository contains two main versions:
 
-[//]: # (big-AGI is an open book; see the **[ready-to-ship and future ideas]&#40;https://github.com/users/enricoros/projects/4/views/2&#41;** in our open roadmap)
+- Big-AGI 2: next-generation, bringing the most advanced AI experience
+  - `v2-dev`: V2 development branch, the exciting one, future default (this branch)
+- Big-AGI Stable: as deployed on big-agi.com
+  - `v1-stable`: Current stable version, and currently the Docker 'latest' tagged images
 
-### What's New in 1.16.1...1.16.7 · Aug 7, 2024 (patch releases)
+Note: After the V2 Q1 2025 release, `v2-dev` will become the default branch and `v1-stable` will reach EOL.
 
+### Quick links: 👉 [roadmap](https://github.com/users/enricoros/projects/4/views/2) 👉 [installation](docs/installation.md) 👉 [documentation](docs/README.md)
+
+---
+
+### 5,000 Commits Milestone · Jan 2025
+
+Hit 5k commits last week. That's a lot of code, and it's the [foundation for what's coming](https://big-agi.com/blog/big-agi-2-is-almost-ready).
+
+Recent work has been intense:
+- Chain of thought reasoning across multiple LLMs: **OpenAI o3** and o1, **DeepSeek R1**, **Gemini 2.0 Flash Thinking**, and more
+- Beam is real - ~35% of our free users run it daily to compare models
+- New AIX framework lets us scale features we couldn't before
+- UI is faster than ever. Like, terminal-fast
+
+Big-AGI 2 is weeks away. Yes, we're late, but we're making it right. The new architecture is solid and the speed improvements are real.
+
+Stay tuned. This is going to be good.
+
+![5000e-830px](https://github.com/user-attachments/assets/42f7420b-9331-421b-9a18-2e653aaa7d9b)
+
+### What's New in 1.16.1...1.16.9 · Jan 21, 2025 (patch releases)
+
+- 1.16.9: Docker Gemini fix (R1 models are supported in Big-AGI 2)
+- 1.16.8: OpenAI ChatGPT-4o Latest (o1 models are supported in Big-AGI 2)
 - 1.16.7: OpenAI support for GPT-4o 2024-08-06
 - 1.16.6: Groq support for Llama 3.1 models
 - 1.16.5: GPT-4o Mini support
 - 1.16.4: 8192 tokens support for Claude 3.5 Sonnet
 - 1.16.3: Anthropic Claude 3.5 Sonnet model support
-- 1.16.2: Improve web downloads, as text, markdwon, or HTML
+- 1.16.2: Improve web downloads, as text, markdown, or HTML
 - 1.16.2: Proper support for Gemini models
 - 1.16.2: Added the latest Mistral model
 - 1.16.2: Tokenizer support for gpt-4o
@@ -147,7 +176,7 @@ You can easily configure 100s of AI models in big-AGI:
 
 | **AI models**       | _supported vendors_                                                                                                                                                                                                             |
 |:--------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Opensource Servers  | [LocalAI](https://localai.io/) (multimodal) · [Ollama](https://ollama.com/) · [Oobabooga](https://github.com/oobabooga/text-generation-webui)                                                                                   |
+| Opensource Servers  | [LocalAI](https://localai.io/) (multimodal) · [Ollama](https://ollama.com/)                                                                                                                                                     |
 | Local Servers       | [LM Studio](https://lmstudio.ai/)                                                                                                                                                                                               |
 | Multimodal services | [Azure](https://azure.microsoft.com/en-us/products/ai-services/openai-service) · [Google Gemini](https://ai.google.dev/) · [OpenAI](https://platform.openai.com/docs/overview)                                                  |
 | Language services   | [Anthropic](https://anthropic.com) · [Groq](https://wow.groq.com/) · [Mistral](https://mistral.ai/) · [OpenRouter](https://openrouter.ai/) · [Perplexity](https://www.perplexity.ai/) · [Together AI](https://www.together.ai/) | 
@@ -219,6 +248,13 @@ Or bring your API keys and jump straight into our free instance on [big-AGI.com]
 
 [//]: # ([![License]&#40;https://img.shields.io/github/license/enricoros/big-agi&#41;]&#40;https://github.com/enricoros/big-agi/LICENSE&#41;)
 
+## 📜 Licensing
+
+Big-AGI incorporates third-party software components that are subject
+to separate license terms. For detailed information about these
+components and their respective licenses, please refer to
+the [Third-Party Notices](src/modules/3rdparty/THIRD_PARTY_NOTICES.md).
+
 ---
 
-2023-2024 · Enrico Ros x [big-AGI](https://big-agi.com) · License: [MIT](LICENSE) · Made with 💙
+2023-2024 · Enrico Ros x [Big-AGI](https://big-agi.com) · Like this project? Leave a star! 💫⭐

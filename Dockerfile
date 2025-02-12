@@ -1,7 +1,6 @@
 # Base
-FROM node:18-alpine AS base
+FROM node:22-alpine AS base
 ENV NEXT_TELEMETRY_DISABLED 1
-
 
 # Dependencies
 FROM base AS deps
@@ -10,6 +9,9 @@ WORKDIR /app
 # Dependency files
 COPY package*.json ./
 COPY src/server/prisma ./src/server/prisma
+
+# link ssl3 for latest Alpine
+RUN sh -c '[ ! -e /lib/libssl.so.3 ] && ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3 || echo "Link already exists"'
 
 # Install dependencies, including dev (release builds should use npm ci)
 ENV NODE_ENV development
@@ -27,6 +29,9 @@ ENV NEXT_PUBLIC_GA4_MEASUREMENT_ID=${NEXT_PUBLIC_GA4_MEASUREMENT_ID}
 # Copy development deps and source
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# link ssl3 for latest Alpine
+RUN sh -c '[ ! -e /lib/libssl.so.3 ] && ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3 || echo "Link already exists"'
 
 # Build the application
 ENV NODE_ENV production
